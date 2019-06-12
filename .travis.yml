@@ -1,7 +1,7 @@
 language: go
 install: true
 go:
-  - '1.11'
+  - '1.12'
 script:
   - "./build.sh -n -u -l -w"
 notifications:
