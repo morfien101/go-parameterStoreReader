@@ -1,0 +1,35 @@
+language: go
+install: true
+go:
+  - '1.11'
+script:
+  - "./build.sh -n -u -l -w"
+notifications:
+  email:
+  - morfien101@gmail.com
+  on_failure: always
+  on_success: change
+env:
+  global:
+    secure: Pha3EY1cTvCaJwUjLVX2cv0rIoOaFZ7ktjKLqvVSzX1aDy2AdJ1NefsK5n5o8xFQ8zfQj+tyYM7TaLe1XZjlMZgWyJCmoaFkLXGs5tvuaAWUBiyXpX4Zbv/QTS0qP5ydmxMihe+PRL9Mtm+mitgpEyiMrfVzF/6vcGweyy/5CNQVe6bNN5fitsDfLBWMVGSLDdV3fJm3VHmcYUhowU6Soo0vyMkvoqpp1G51eOKZVLcZJMBwuXbxQAlXc0KERVF69h6Fpqy7ScJ2d29pZRjn/Bb0HsqGnEAAPYllt85wjH4nedpPn6U/b9ZMvybK27xzHUBtEnh9NjbLna/IDR/p9xhVjc+cLTNvkPiVn/XtQ5lHrwrcR34whWtZPZW/4ho6t/KBno5OJpfHPzb2ILQEszsAVNPKo3DXoFMZ4KTSn9G39uErLtZ1KK9UrXr97L4G+IewxztXh/PKTYkqMp1dGSzOom8L14I4a2u3SrXQ7DLddSu4J31lr8XpZLeNjtNrA9xr7RJRMriep5OAmSQlXmxmj6mf9GkkMGNrJK74csxXUPpnx5F2oj5Ug9KXyFmNaPpI8dIWyTZS7ax66laVS94PFyugoDq8mojnvQ3Z7gWntdyjRYketeDqPXOqbEPSGbpg1LFxtmkHfNB5Y3526yKAPPEGJ6xCYgAmjWLWD7A=
+branches:
+  only:
+  - master
+  except:
+  - "/\\+travis\\d+$/"
+before_deploy:
+- export PUBDIR=$HOME/publish
+- mkdir $PUBDIR
+- cp -v artifacts/*.tar.gz artifacts/*.zip $PUBDIR
+- git config --local user.name "Travis"
+- git config --local user.email "morfien101@gmail.com"
+- git tag "$(./build.sh -v)" --force
+deploy:
+  provider: releases
+  api_key:
+    secure: qCVgXIh8YECi1bEJQ2hA7xZTjqDtJ6HmxccPI5PuCLhHhOeVcfhbcFPbNRhPsxGVUNEJH0JyuLTBSVXO3RakcvQ7gzI94k1xoprFFiOmIaAqM4pj54vvJBnZe55ed4XPS4r13f3QjDb2JAo390b/ZvlDSK7HXbY1KsjCPOakORHNT0q150YawrY3mHjlcvOBqma0D+AsFw9z07j2sxV3DZtbxrhEkzM0xT8JNnyVGgmZnmfhQO0K3WSgletZxCbso/hsC8riEkFAhpFx29HR8jNjokCO0v0ISmxGTSj2oQ7eAKvYUZWdayIE4fHL4M7VB3JHuWpTaoAqjSDsv9/SafBQfT25cTKyKw2YZJ9T57D/Ehx/uBpn1fUU4O/+df3Wxa493LHiWMaxr5SXUCzE+i6wAx34DbfdWaaZrxIUdH0mJtChXsqkgDMDh1i4ZXRZg1Wrg54d37Ooqp3Zl+0//uoQ32lT/iX3WdJNbY7juY72uBfXrO3IDHKPyTQYNrpDjWxVZ02j9FNKGIvapvFSrPiQVNh4vLClx2wOdRsfUEuBE/7sV5GdtAn2LC77JS8BbtGUze4yOMvIIhYkpM6l00/OK3pTb28fguM5YQtrXIh9TtRCxJovVslCjGLR+D+WhkItQZuYvYl+0LEjsBBCWguqiJiU+IvTQNHyRrxCscM=
+  file: $PUBDIR/*
+  file_glob: true
+  skip_cleanup: true
+  on:
+    repo: morfien101/chef-waiter
