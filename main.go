@@ -27,7 +27,7 @@ var (
 func main() {
 	flag.Parse()
 
-	if *flagHelp {
+	if *flagVersion {
 		fmt.Println(VERSION)
 		return
 	}
