@@ -13,3 +13,6 @@
 
 # VSCode
 .vscode
+
+# Project
+artifacts/
