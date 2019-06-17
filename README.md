@@ -55,6 +55,7 @@ Outputting the data that is collected can be encoded in base64. This is makes it
 
 ## Help menu
 
+```
   -access-key string
         Access key for AWS API
   -base64
@@ -75,3 +76,4 @@ Outputting the data that is collected can be encoded in base64. This is makes it
         Secret key for AWS API
   -v    Show Version
   -h    Help menu
+```
