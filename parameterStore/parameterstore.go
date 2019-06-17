@@ -91,9 +91,16 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 			return nil, fmt.Errorf("No Secrets found using %s", *pip.Path)
 		}
 
-		// Extract the keys and values
+		// The splitter is used to show the values key minus what the user gave us.
+		// If there are maby laters they will be displayed.
+		// All keys in ParameterStore end in /
+		splitter := ps.config.path
+		if splitter[len(splitter)-1] != byte('/') {
+			splitter = splitter + "/"
+		}
+
 		for _, parameter := range output.Parameters {
-			SplitPath := strings.Split(*parameter.Name, "/")
+			SplitPath := strings.Split(*parameter.Name, splitter)
 			out[SplitPath[len(SplitPath)-1]] = *parameter.Value
 		}
 

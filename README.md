@@ -26,6 +26,23 @@ This is currently under development and will change soon.
 
 This option is used when the -recursive flag is specified.
 
+#### Output
+
+When viewing the output you can have it in 3 formats.
+
+- JSON
+- Pretty JSON
+- Key:Value
+
+JSON and Pretty JSON is self explaining. It's JSON and 2 space indented JSON.
+
+Key:Value will display the key then a : and then the value. This means you can split on the first ":".
+Use in conjunction with --base64 you can split data and not have to worry about new lines making it hard to find the start and end.
+
+#### Nest Keys
+
+If you have nested values in your keys they are displayed in the key name minus the path supplied by the user.
+
 ### Common settings
 
 If you need to pass in AWS credentials you can pass them in via the -access-key and -secret-key flags.
@@ -34,13 +51,20 @@ The region also needs to be specified. Use -region for this. You only need this 
 
 This tool will try to use the default AWS credentials lookups. This includes shared configuration files and EC2 Profiles.
 
+Outputting the data that is collected can be encoded in base64. This is makes it easy to compare values if you want to cross reference values in different places. This is applied only to the values.
+
 ## Help menu
 
   -access-key string
         Access key for AWS API
+  -base64
+        Base64 encode collected values.
   -decrypt
         Request decrypted keys
-  -h    Help menu
+  -json-output
+        Output multiple key, values as JSON
+  -json-pretty
+        JSON output is displayed in pretty print
   -path string
         Parameter Store path
   -recursive
@@ -50,3 +74,4 @@ This tool will try to use the default AWS credentials lookups. This includes sha
   -secret-key string
         Secret key for AWS API
   -v    Show Version
+  -h    Help menu
