@@ -13,6 +13,7 @@ export CGO_ENABLED=0
 
 BUILD_WINDOWS=0
 BUILD_LINUX=0
+BUILD_MAC=0
 BIN_NAME="ps-reader"
 OUT_DIR=./artifacts
 SCRIPT_PATH=$0
@@ -40,6 +41,7 @@ while test $# -gt 0; do
       # Show help message
       echo "-w: Builds the windows binary."
       echo "-l: Builds the Linux binary."
+      echo "-m: Builds the Mac binary."
       echo "-t: Tar and gzip files that are compiled."
       echo "-x86: Sets the builds to be 32bit."
       echo "--test: runs all tests."
@@ -60,6 +62,10 @@ while test $# -gt 0; do
       ;;
     -l)
       BUILD_LINUX=1
+      shift
+      ;;
+    -m)
+      BUILD_MAC=1
       shift
       ;;
     -t)
@@ -295,6 +301,10 @@ fi
 
 if [ $BUILD_WINDOWS -eq 1 ]; then
   build_bin "windows"
+fi
+
+if [ $BUILD_MAC -eq 1 ]; then
+  build_bin "darwin"
 fi
 
 if [ $TAR_FILES -eq 1 ]; then

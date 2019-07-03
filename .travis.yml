@@ -3,7 +3,7 @@ install: true
 go:
 - '1.12'
 script:
-- "./build.sh -n -u -l -w -t"
+- "./build.sh -n -u -l -w -m -t"
 notifications:
   email:
     recipients:
