@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/morfien101/go-parameterStoreReader/awsSession"
 	parameterstore "github.com/morfien101/go-parameterStoreReader/parameterStore"
 )
@@ -24,6 +25,8 @@ var (
 	flagDecrypt    = flag.Bool("decrypt", false, "Request decrypted keys")
 	flagAccessKey  = flag.String("access-key", "", "Access key for AWS API")
 	flagSecretKey  = flag.String("secret-key", "", "Secret key for AWS API")
+	flagProfile    = flag.String("profile", "", "AWS Profile to use")
+	flagCredsFile  = flag.String("config-file", "", "AWS Config file override, only valid with -profile")
 	flagRegion     = flag.String("region", "", "Region for AWS API")
 	flagHelp       = flag.Bool("h", false, "Help menu")
 	flagVersion    = flag.Bool("v", false, "Show Version")
@@ -56,7 +59,13 @@ func main() {
 		log.Fatal("Failed to set environment variable AWS_REGION for access to AWS")
 	}
 
-	session, err := awsSession.New()
+	var session *session.Session
+	var err error
+	if *flagProfile == "" {
+		session, err = awsSession.New()
+	} else {
+		session, err = awsSession.NewWithOptions(*flagProfile, *flagCredsFile)
+	}
 	if err != nil {
 		log.Fatalf("Failed to create AWS Session. Error: %s", err)
 	}

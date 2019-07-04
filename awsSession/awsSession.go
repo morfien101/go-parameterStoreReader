@@ -1,14 +1,45 @@
 package awsSession
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+)
+
+var (
+	credsPath = ".aws/credentials"
 )
 
 // New will create and return an AWS Session
 func New() (*session.Session, error) {
 	return session.NewSession()
+}
+
+// NewWithOptions will create and return an AWS Session with supplied options
+func NewWithOptions(profile, credsFile string) (*session.Session, error) {
+
+	filePath := credsFile
+	if filePath == "" {
+		home, ok := os.LookupEnv("HOME")
+		if !ok {
+			return nil, fmt.Errorf("Can't find home environment variable. Looking for credentials file")
+		}
+		filePath = home + "/" + credsPath
+		_, err := os.Stat(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to lookup credentials file. Error: %s", err)
+		}
+	}
+
+	creds := credentials.NewSharedCredentials(filePath, profile)
+	config := aws.NewConfig().WithCredentials(creds)
+	return session.NewSessionWithOptions(session.Options{
+		Config:            *config,
+		SharedConfigState: session.SharedConfigEnable,
+	})
 }
 
 // SetRegion publish the supplied region if there is one given
