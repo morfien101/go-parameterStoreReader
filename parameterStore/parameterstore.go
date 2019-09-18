@@ -1,6 +1,7 @@
 package parameterstore
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -15,18 +16,22 @@ type ParameterStore struct {
 }
 
 type config struct {
-	recursive bool
-	path      string
-	decrypt   bool
+	recursive    bool
+	path         string
+	decrypt      bool
+	includePath  bool
+	base64Values bool
 }
 
-func New(session *session.Session, path string, recursive, decrypt bool) *ParameterStore {
+func New(session *session.Session, path string, recursive, decrypt, includePath, b64Values bool) *ParameterStore {
 	ps := &ParameterStore{
 		ssmSession: ssm.New(session),
 		config: config{
-			path:      path,
-			recursive: recursive,
-			decrypt:   decrypt,
+			path:         path,
+			recursive:    recursive,
+			decrypt:      decrypt,
+			includePath:  includePath,
+			base64Values: b64Values,
 		},
 	}
 	return ps
@@ -73,7 +78,12 @@ func (ps *ParameterStore) value(pip *ssm.GetParameterInput) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return *output.Parameter.Value, nil
+	value := *output.Parameter.Value
+	if ps.config.base64Values {
+		value = ps.b64(value)
+	}
+
+	return value, nil
 }
 
 // Values will get keys and values from Parameter Store and return them as a map[string]string
@@ -91,17 +101,21 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 			return nil, fmt.Errorf("No Secrets found using %s", *pip.Path)
 		}
 
-		// The splitter is used to show the values key minus what the user gave us.
-		// If there are maby laters they will be displayed.
-		// All keys in ParameterStore end in /
-		splitter := ps.config.path
-		if splitter[len(splitter)-1] != byte('/') {
-			splitter = splitter + "/"
-		}
+		if ps.config.includePath {
+			for _, parameter := range output.Parameters {
+				out[*parameter.Name] = *parameter.Value
+			}
+		} else {
+			// The splitter is used to show the values key minus what the user gave us.
+			splitter := ps.config.path
+			if splitter[len(splitter)-1] != byte('/') {
+				splitter = splitter + "/"
+			}
 
-		for _, parameter := range output.Parameters {
-			SplitPath := strings.Split(*parameter.Name, splitter)
-			out[SplitPath[len(SplitPath)-1]] = *parameter.Value
+			for _, parameter := range output.Parameters {
+				SplitPath := strings.Split(*parameter.Name, splitter)
+				out[SplitPath[len(SplitPath)-1]] = *parameter.Value
+			}
 		}
 
 		// Check to see if we need to go again
@@ -115,5 +129,16 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 		}
 	}
 
+	// If base64 is requested then convert the values and store them in place of the current values.
+	if ps.config.base64Values {
+		for key, value := range out {
+			out[key] = ps.b64(value)
+		}
+	}
+
 	return out, nil
+}
+
+func (ps *ParameterStore) b64(data string) string {
+	return base64.StdEncoding.EncodeToString([]byte(data))
 }
