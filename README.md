@@ -57,23 +57,31 @@ Outputting the data that is collected can be encoded in base64. This is makes it
 
 ```
   -access-key string
-        Access key for AWS API
+        Access key for AWS API.
   -base64
         Base64 encode collected values.
+  -config-file string
+        AWS Config file override, only valid with -profile.
   -decrypt
-        Request decrypted keys
-  -json-output
-        Output multiple key, values as JSON
-  -json-pretty
-        JSON output is displayed in pretty print
+        Request decrypted keys.
+  -f string
+        Output to specified file.
+  -format string
+        Format for output. Supported values: line,json,pretty-json,yaml. (default "line")
+  -h    Help menu.
+  -include-path
+        Include the passed in path in the output. Only used with recursive lookups.
   -path string
-        Parameter Store path
+        Parameter Store path.
+  -profile string
+        AWS Profile to use.
   -recursive
-        Look up all keys in branch
+        Look up all keys in branch.
   -region string
-        Region for AWS API
+        Region for AWS API.
   -secret-key string
-        Secret key for AWS API
-  -v    Show Version
-  -h    Help menu
+        Secret key for AWS API.
+  -tree-view
+        Present output as a tree. Only works with recursive view.
+  -v    Show application Version.
 ```
