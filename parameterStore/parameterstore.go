@@ -2,12 +2,14 @@ package parameterstore
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"gopkg.in/yaml.v2"
 )
 
 type ParameterStore struct {
@@ -141,4 +143,21 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 
 func (ps *ParameterStore) b64(data string) string {
 	return base64.StdEncoding.EncodeToString([]byte(data))
+}
+
+func (ps ParameterStore) FormatOutput(data map[string]string, format string, createTree bool) ([]byte, error) {
+	switch format {
+	case "json":
+		return json.Marshal(convertTree(data, createTree))
+	case "pretty-json":
+		return json.MarshalIndent(convertTree(data, createTree), "", "  ")
+	case "yaml":
+		return yaml.Marshal(convertTree(data, createTree))
+	case "line":
+		return lineFormat(data), nil
+	case "env":
+		return envFormat(data), nil
+	default:
+		return []byte{}, fmt.Errorf("output format '%s' is not valid", format)
+	}
 }

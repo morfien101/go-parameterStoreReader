@@ -22,7 +22,7 @@ func main() {
 	// Flags
 	flagPath := flag.String("path", "", "Parameter Store path.")
 	flagBase64 := flag.Bool("base64", false, "Base64 encode collected values.")
-	flagFormat := flag.String("format", "line", fmt.Sprintf("Format for output. Supported values: %s.", strings.Join(formats, ",")))
+	flagFormat := flag.String("format", "line", fmt.Sprintf("Format for output. Supported values: %s.", strings.Join(parameterstore.ValidFormats(), ",")))
 	flagRecursive := flag.Bool("recursive", false, "Look up all keys in branch.")
 	flagDecrypt := flag.Bool("decrypt", false, "Request decrypted keys.")
 	flagAccessKey := flag.String("access-key", "", "Access key for AWS API.")
@@ -30,12 +30,11 @@ func main() {
 	flagProfile := flag.String("profile", "", "AWS Profile to use.")
 	flagCredsFile := flag.String("config-file", "", "AWS Config file override, only valid with -profile.")
 	flagRegion := flag.String("region", "", "Region for AWS API.")
-	flagTree := flag.Bool("tree-view", false, "Present output as a tree. Only works with recursive view.")
+	flagTreeView := flag.Bool("tree-view", false, "Present output as a tree. Only works with recursive view.")
 	flagIncludePath := flag.Bool("include-path", false, "Include the passed in path in the output. Only used with recursive lookups.")
 	flagFileOutput := flag.String("f", "", "Output to specified file.")
 	flagHelp := flag.Bool("h", false, "Help menu.")
 	flagVersion := flag.Bool("v", false, "Show application Version.")
-	//flagEnvVars := flag.Bool("env", false, "Export the last keys as a environment variable.")
 	flag.Parse()
 
 	if *flagVersion {
@@ -48,7 +47,7 @@ func main() {
 		return
 	}
 
-	if !formatValidation(*flagFormat) {
+	if !parameterstore.FormatValidation(*flagFormat) {
 		fmt.Printf("Format %s is not valid.\n", *flagFormat)
 		os.Exit(1)
 	}
@@ -81,16 +80,22 @@ func main() {
 	ps := parameterstore.New(session, *flagPath, *flagRecursive, *flagDecrypt, *flagIncludePath, *flagBase64)
 
 	var output string
+
 	if *flagRecursive {
-		output, err = recursiveLookup(ps, *flagFormat, *flagTree, *flagIncludePath)
+		psMap, err := ps.CollectPath()
+		if err != nil {
+			log.Fatalf("Failed to read from parameter store. Error: %s", err)
+		}
+
+		formattedOutput, err := ps.FormatOutput(psMap, *flagFormat, *flagTreeView)
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		output = string(formattedOutput)
 	} else {
-		output, err = singleLookup(ps, *flagBase64)
+		output, err = ps.CollectSingle()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to read from parameter store. Error: %s\n", err)
 		}
 	}
 
@@ -103,26 +108,4 @@ func main() {
 	}
 
 	fmt.Println(output)
-}
-
-func recursiveLookup(ps *parameterstore.ParameterStore, format string, treeView bool, includePath bool) (string, error) {
-	output, err := ps.CollectPath()
-	if err != nil {
-		return "", fmt.Errorf("Failed to read from parameter store. Error: %s", err)
-	}
-
-	formatedOutput, err := formatOutput(output, format, treeView)
-	if err != nil {
-		return "", fmt.Errorf("Failed to format output. Error: %s", err)
-
-	}
-	return string(formatedOutput), nil
-}
-
-func singleLookup(ps *parameterstore.ParameterStore, base64Encoding bool) (string, error) {
-	value, err := ps.CollectSingle()
-	if err != nil {
-		return "", fmt.Errorf("Failed to read from parameter store. Error: %s", err)
-	}
-	return value, nil
 }

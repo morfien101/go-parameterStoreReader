@@ -1,33 +1,19 @@
-package main
+package parameterstore
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
 var (
-	formats = []string{"line", "json", "pretty-json", "yaml"}
+	formats = []string{"line", "json", "pretty-json", "yaml", "env"}
 )
 
-func formatOutput(data map[string]string, format string, createTree bool) ([]byte, error) {
-	switch format {
-	case "json":
-		return json.Marshal(convertTree(data, createTree))
-	case "pretty-json":
-		return json.MarshalIndent(convertTree(data, createTree), "", "  ")
-	case "yaml":
-		return yaml.Marshal(convertTree(data, createTree))
-	case "line":
-		return lineFormat(data), nil
-	default:
-		return []byte{}, fmt.Errorf("output format '%s' is not valid", format)
-	}
+func ValidFormats() []string {
+	return formats
 }
 
-func formatValidation(formatString string) bool {
+func FormatValidation(formatString string) bool {
 	valid := false
 
 	for _, formatValue := range formats {
@@ -46,6 +32,17 @@ func lineFormat(data map[string]string) []byte {
 	}
 
 	return []byte(strings.Join(output, "\n"))
+}
+
+func envFormat(data map[string]string) []byte {
+	out := []string{}
+
+	for key, value := range data {
+		brokenKeys := strings.Split(key, "/")
+		out = append(out, fmt.Sprintf("%s=%s", brokenKeys[len(brokenKeys)-1], value))
+	}
+
+	return []byte(strings.Join(out, "\n"))
 }
 
 func convertTree(data map[string]string, split bool) map[string]interface{} {
