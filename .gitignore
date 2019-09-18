@@ -17,3 +17,6 @@ _notes.txt
 
 # Project
 artifacts/
+
+# Test files
+test*

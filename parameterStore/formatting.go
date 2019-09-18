@@ -45,27 +45,21 @@ func envFormat(data map[string]string) []byte {
 	return []byte(strings.Join(out, "\n"))
 }
 
-func convertTree(data map[string]string, split bool) map[string]interface{} {
+func convertTree(data map[string]string) map[string]interface{} {
 	treeView := make(map[string]interface{})
 
-	if split {
-		for keySolid, value := range data {
-			keys := strings.Split(keySolid, "/")
-			// clean keys
-			cleanKeys := []string{}
-			for _, key := range keys {
-				if key != "" {
-					cleanKeys = append(cleanKeys, key)
-				}
+	for keySolid, value := range data {
+		keys := strings.Split(keySolid, "/")
+		// clean keys
+		cleanKeys := []string{}
+		for _, key := range keys {
+			if key != "" {
+				cleanKeys = append(cleanKeys, key)
 			}
-			keys = []string{}
+		}
+		keys = []string{}
 
-			mapper(treeView, cleanKeys, value)
-		}
-	} else {
-		for key, value := range data {
-			treeView[key] = value
-		}
+		mapper(treeView, cleanKeys, value)
 	}
 
 	return treeView

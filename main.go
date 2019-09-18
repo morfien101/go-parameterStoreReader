@@ -30,7 +30,6 @@ func main() {
 	flagProfile := flag.String("profile", "", "AWS Profile to use.")
 	flagCredsFile := flag.String("config-file", "", "AWS Config file override, only valid with -profile.")
 	flagRegion := flag.String("region", "", "Region for AWS API.")
-	flagTreeView := flag.Bool("tree-view", false, "Present output as a tree. Only works with recursive view.")
 	flagIncludePath := flag.Bool("include-path", false, "Include the passed in path in the output. Only used with recursive lookups.")
 	flagFileOutput := flag.String("f", "", "Output to specified file.")
 	flagHelp := flag.Bool("h", false, "Help menu.")
@@ -87,7 +86,7 @@ func main() {
 			log.Fatalf("Failed to read from parameter store. Error: %s", err)
 		}
 
-		formattedOutput, err := ps.FormatOutput(psMap, *flagFormat, *flagTreeView)
+		formattedOutput, err := ps.FormatOutput(psMap, *flagFormat)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -145,14 +145,14 @@ func (ps *ParameterStore) b64(data string) string {
 	return base64.StdEncoding.EncodeToString([]byte(data))
 }
 
-func (ps ParameterStore) FormatOutput(data map[string]string, format string, createTree bool) ([]byte, error) {
+func (ps ParameterStore) FormatOutput(data map[string]string, format string) ([]byte, error) {
 	switch format {
 	case "json":
-		return json.Marshal(convertTree(data, createTree))
+		return json.Marshal(convertTree(data))
 	case "pretty-json":
-		return json.MarshalIndent(convertTree(data, createTree), "", "  ")
+		return json.MarshalIndent(convertTree(data), "", "  ")
 	case "yaml":
-		return yaml.Marshal(convertTree(data, createTree))
+		return yaml.Marshal(convertTree(data))
 	case "line":
 		return lineFormat(data), nil
 	case "env":
