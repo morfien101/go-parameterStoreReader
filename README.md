@@ -62,8 +62,8 @@ key1/keyABC/final1:valueABC
 
 Pro Tips:
 
-* Remember that the presented path is stripped of the passed in path unless you use the `-include-path` flag.
-* Use in conjunction with --base64 you can split data and not have to worry about new lines making it hard to find the start and end.
+- Remember that the presented path is stripped of the passed in path unless you use the `-include-path` flag.
+- Use in conjunction with --base64 you can split data and not have to worry about new lines making it hard to find the start and end.
 
 ##### env
 
@@ -97,14 +97,14 @@ Data that is collected can be encoded in base64 using the `-base64` flag. This r
 ./ps-reader -base64 -format pretty-json -include-path -recursive -path /app1
 
 # Set environment variables from Parameter store
-for ev in $(./ps-reader -format env -region eu-west-1 -decrypt -recursive -path /c3/infrastructure/telegraf); do
+for ev in $(./ps-reader -format env -region eu-west-1 -decrypt -recursive -path /production/app2); do
     eval "export $ev"
 done
 ```
 
 ## Help menu
 
-```
+```text
   -access-key string
         Access key for AWS API.
   -base64
