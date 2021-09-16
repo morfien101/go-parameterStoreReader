@@ -39,7 +39,7 @@ func New(session *session.Session, path string, recursive, decrypt, includePath,
 	return ps
 }
 
-func (ps *ParameterStore) CollectPath() (map[string]string, error) {
+func (ps *ParameterStore) CollectPath(upperCase bool) (map[string]string, error) {
 	inputObjects := ps.pathInput("")
 	values, err := ps.values(inputObjects)
 	if err != nil {
@@ -145,8 +145,9 @@ func (ps *ParameterStore) b64(data string) string {
 	return base64.StdEncoding.EncodeToString([]byte(data))
 }
 
-func (ps ParameterStore) FormatOutput(data map[string]string, format string) ([]byte, error) {
-	switch format {
+func (ps ParameterStore) FormatOutput(data map[string]string, formatOptions FormatOptions) ([]byte, error) {
+	globalformatOptions = formatOptions
+	switch globalformatOptions.Format {
 	case "json":
 		return json.Marshal(convertTree(data))
 	case "pretty-json":
@@ -158,6 +159,6 @@ func (ps ParameterStore) FormatOutput(data map[string]string, format string) ([]
 	case "env":
 		return envFormat(data), nil
 	default:
-		return []byte{}, fmt.Errorf("output format '%s' is not valid", format)
+		return []byte{}, fmt.Errorf("output format '%s' is not valid", globalformatOptions.Format)
 	}
 }

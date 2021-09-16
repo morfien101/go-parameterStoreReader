@@ -6,8 +6,15 @@ import (
 )
 
 var (
-	formats = []string{"line", "json", "pretty-json", "yaml", "env"}
+	formats             = []string{"line", "json", "pretty-json", "yaml", "env"}
+	globalformatOptions = FormatOptions{}
 )
+
+type FormatOptions struct {
+	Format    string
+	Prefix    string
+	UpperCase bool
+}
 
 func ValidFormats() []string {
 	return formats
@@ -25,6 +32,20 @@ func FormatValidation(formatString string) bool {
 	return valid
 }
 
+func upperIfNeeded(s string) string {
+	if globalformatOptions.UpperCase {
+		return strings.ToUpper(s)
+	}
+	return s
+}
+
+func prefixIfNeeded(s string) string {
+	if globalformatOptions.Prefix != "" {
+		return fmt.Sprintf("%s%s", globalformatOptions.Prefix, s)
+	}
+	return s
+}
+
 func lineFormat(data map[string]string) []byte {
 	output := []string{}
 	for key, value := range data {
@@ -39,7 +60,7 @@ func envFormat(data map[string]string) []byte {
 
 	for key, value := range data {
 		brokenKeys := strings.Split(key, "/")
-		out = append(out, fmt.Sprintf("%s=%s", brokenKeys[len(brokenKeys)-1], value))
+		out = append(out, fmt.Sprintf("%s=%s", upperIfNeeded(prefixIfNeeded(brokenKeys[len(brokenKeys)-1])), value))
 	}
 
 	return []byte(strings.Join(out, "\n"))

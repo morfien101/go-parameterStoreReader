@@ -23,6 +23,8 @@ func main() {
 	flagPath := flag.String("path", "", "Parameter Store path.")
 	flagBase64 := flag.Bool("base64", false, "Base64 encode collected values.")
 	flagFormat := flag.String("format", "line", fmt.Sprintf("Format for output. Supported values: %s.", strings.Join(parameterstore.ValidFormats(), ",")))
+	flagUpperCase := flag.Bool("upper-case", false, "Upper case the path. Only works with format 'env'.")
+	flagPrefix := flag.String("prefix", "", "Prefix the keys with this value. Only works with format 'env'.")
 	flagRecursive := flag.Bool("recursive", false, "Look up all keys in branch.")
 	flagDecrypt := flag.Bool("decrypt", false, "Request decrypted keys.")
 	flagAccessKey := flag.String("access-key", "", "Access key for AWS API.")
@@ -34,6 +36,7 @@ func main() {
 	flagFileOutput := flag.String("f", "", "Output to specified file.")
 	flagHelp := flag.Bool("h", false, "Help menu.")
 	flagVersion := flag.Bool("v", false, "Show application Version.")
+
 	flag.Parse()
 
 	if *flagVersion {
@@ -81,12 +84,16 @@ func main() {
 	var output string
 
 	if *flagRecursive {
-		psMap, err := ps.CollectPath()
+		psMap, err := ps.CollectPath(*flagUpperCase)
 		if err != nil {
 			log.Fatalf("Failed to read from parameter store. Error: %s", err)
 		}
-
-		formattedOutput, err := ps.FormatOutput(psMap, *flagFormat)
+		formatOptions := parameterstore.FormatOptions{
+			Format:    *flagFormat,
+			Prefix:    *flagPrefix,
+			UpperCase: *flagUpperCase,
+		}
+		formattedOutput, err := ps.FormatOutput(psMap, formatOptions)
 		if err != nil {
 			log.Fatal(err)
 		}
