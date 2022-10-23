@@ -34,7 +34,7 @@ jobs:
           # run the build for each supported OS
           for os in "linux" "darwin" "windows"; do
             echo "Building for $os..."
-            GOOS=$os CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${os} .
+            GOOS=$os GOARCH=amd64 CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${os}_amd64 .
             
             # If its windows we need to rename it to have .exe at the end.
             if [ $os == "windows" ]; then
@@ -45,13 +45,13 @@ jobs:
           # Make an ARM bin for linux also
           for arch in arm64 arm; do
             echo "Building for linux on $arch..."
-            GOOS=linux GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${GOOS}_${arch} .
+            GOOS=linux GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_linux_${arch} .
           done
 
           # Build for Mac with Apple Chips
           for arch in arm64; do
-            echo "Building for Darwin on $arch..."
-            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${GOOS}_${arch} .
+            echo "Building for darwin on $arch..."
+            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_darwin_${arch} .
           done
       - name: Release
         uses: softprops/action-gh-release@v1
