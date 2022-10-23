@@ -2,7 +2,7 @@ name: build and test
 on: [push]
 jobs:
   just_test:
-    if: startsWith(github.ref, 'refs/heads/main')
+    if: startsWith(github.ref, 'refs/heads/master')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
