@@ -31,7 +31,7 @@ jobs:
           ARTIFACTS_DIR="./artifacts"
           NAME=aws-parameter-store-reader
           VERSION=${{ steps.get_tag.outputs.SOURCE_TAG }}
-          BUILD_CMD="go build -a -ldflags=\"-X main.version=$VERSION\""
+          BUILD_CMD=$(echo "go build -a -ldflags=\"-X main.version=$VERSION\"")
 
           mkdir -p $ARTIFACTS_DIR
 
