@@ -23,8 +23,8 @@ func main() {
 	flagPath := flag.String("path", "", "Parameter Store path.")
 	flagBase64 := flag.Bool("base64", false, "Base64 encode collected values.")
 	flagFormat := flag.String("format", "line", fmt.Sprintf("Format for output. Supported values: %s.", strings.Join(parameterstore.ValidFormats(), ",")))
-	flagUpperCase := flag.Bool("upper-case", false, "Upper case the path. Only works with format 'env'.")
-	flagPrefix := flag.String("prefix", "", "Prefix the keys with this value. Only works with format 'env'.")
+	flagUpperCase := flag.Bool("upper-case", false, "Upper case the path.")
+	flagPrefix := flag.String("prefix", "", "Prefix the keys with this value. If path is included, the last part is modified.")
 	flagRecursive := flag.Bool("recursive", false, "Look up all keys in branch.")
 	flagDecrypt := flag.Bool("decrypt", false, "Request decrypted keys.")
 	flagAccessKey := flag.String("access-key", "", "Access key for AWS API.")
@@ -49,6 +49,7 @@ func main() {
 		return
 	}
 
+	// Validata that path and format are valid
 	if !parameterstore.FormatValidation(*flagFormat) {
 		fmt.Printf("Format %s is not valid.\n", *flagFormat)
 		os.Exit(1)
@@ -58,6 +59,7 @@ func main() {
 		log.Fatal("--path can not be empty")
 	}
 
+	// If secrets are passed in directly, set them in the this processes environment.
 	if err := awsSession.SetAccessKey(*flagAccessKey); err != nil {
 		log.Fatal("Failed to set environment variable AWS_ACCESS_KEY_ID for access to AWS")
 	}
@@ -68,6 +70,7 @@ func main() {
 		log.Fatal("Failed to set environment variable AWS_REGION for access to AWS")
 	}
 
+	// Get an AWS session going
 	var session *session.Session
 	var err error
 	if *flagProfile == "" {
@@ -79,7 +82,19 @@ func main() {
 		log.Fatalf("Failed to create AWS Session. Error: %s", err)
 	}
 
-	ps := parameterstore.New(session, *flagPath, *flagRecursive, *flagDecrypt, *flagIncludePath, *flagBase64)
+	ps := parameterstore.New(
+		session,
+		*flagPath,
+		*flagRecursive,
+		*flagDecrypt,
+		*flagIncludePath,
+		*flagBase64,
+		&parameterstore.FormatOptions{
+			Format:    *flagFormat,
+			Prefix:    *flagPrefix,
+			UpperCase: *flagUpperCase,
+		},
+	)
 
 	var output string
 
@@ -88,12 +103,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to read from parameter store. Error: %s", err)
 		}
-		formatOptions := parameterstore.FormatOptions{
-			Format:    *flagFormat,
-			Prefix:    *flagPrefix,
-			UpperCase: *flagUpperCase,
-		}
-		formattedOutput, err := ps.FormatOutput(psMap, formatOptions)
+
+		formattedOutput, err := ps.FormatOutput(psMap)
 		if err != nil {
 			log.Fatal(err)
 		}

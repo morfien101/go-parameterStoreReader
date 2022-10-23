@@ -15,6 +15,7 @@ import (
 type ParameterStore struct {
 	ssmSession *ssm.SSM
 	config     config
+	format     *FormatOptions
 }
 
 type config struct {
@@ -25,7 +26,15 @@ type config struct {
 	base64Values bool
 }
 
-func New(session *session.Session, path string, recursive, decrypt, includePath, b64Values bool) *ParameterStore {
+func New(
+	session *session.Session,
+	path string,
+	recursive bool,
+	decrypt bool,
+	includePath bool,
+	b64Values bool,
+	formatOptions *FormatOptions,
+) *ParameterStore {
 	ps := &ParameterStore{
 		ssmSession: ssm.New(session),
 		config: config{
@@ -35,12 +44,13 @@ func New(session *session.Session, path string, recursive, decrypt, includePath,
 			includePath:  includePath,
 			base64Values: b64Values,
 		},
+		format: formatOptions,
 	}
 	return ps
 }
 
 func (ps *ParameterStore) CollectPath(upperCase bool) (map[string]string, error) {
-	inputObjects := ps.pathInput("")
+	inputObjects := ps.pathInput()
 	values, err := ps.values(inputObjects)
 	if err != nil {
 		return nil, err
@@ -61,15 +71,11 @@ func (ps *ParameterStore) singleInput() *ssm.GetParameterInput {
 }
 
 // PathInput will create a input object for passing to Values
-func (ps *ParameterStore) pathInput(nextToken string) *ssm.GetParametersByPathInput {
+func (ps *ParameterStore) pathInput() *ssm.GetParametersByPathInput {
 	parameterInputPath := &ssm.GetParametersByPathInput{
 		Path:           aws.String(ps.config.path),
 		Recursive:      aws.Bool(ps.config.recursive),
 		WithDecryption: aws.Bool(ps.config.decrypt),
-	}
-
-	if len(nextToken) < 0 {
-		parameterInputPath.NextToken = aws.String(nextToken)
 	}
 
 	return parameterInputPath
@@ -96,11 +102,11 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 		// Try get the parameters
 		output, err := ps.ssmSession.GetParametersByPath(pip)
 		if err != nil {
-			return out, fmt.Errorf("Failed to get parameters. Error: %s", err)
+			return out, fmt.Errorf("failed to get parameters. Error: %s", err)
 		}
 
 		if len(output.Parameters) == 0 {
-			return nil, fmt.Errorf("No Secrets found using %s", *pip.Path)
+			return nil, fmt.Errorf("no parameter found using %s", *pip.Path)
 		}
 
 		if ps.config.includePath {
@@ -109,22 +115,25 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 			}
 		} else {
 			// The splitter is used to show the values key minus what the user gave us.
-			splitter := ps.config.path
-			if splitter[len(splitter)-1] != byte('/') {
-				splitter = splitter + "/"
+			givenPath := ps.config.path
+			if givenPath[len(givenPath)-1] != byte('/') {
+				givenPath = givenPath + "/"
 			}
 
 			for _, parameter := range output.Parameters {
-				SplitPath := strings.Split(*parameter.Name, splitter)
-				out[SplitPath[len(SplitPath)-1]] = *parameter.Value
+				// Break the parameter name in the given path and discovered path.
+				// Use the discovered path in the out map
+				splitPath := strings.Split(*parameter.Name, givenPath)
+				discoveredPath := fmt.Sprintf("%s%s", "/", splitPath[len(splitPath)-1])
+				out[discoveredPath] = *parameter.Value
 			}
 		}
 
 		// Check to see if we need to go again
-		if output.NextToken != nil {
+		if aws.StringValue(output.NextToken) != "" {
 			// If we have a next token then we have more to collect.
 			// Set next token and go again
-			pip.NextToken = aws.String(*output.NextToken)
+			pip.NextToken = output.NextToken
 		} else {
 			// If nothing is there then break out the loop
 			break
@@ -138,16 +147,40 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 		}
 	}
 
+	if ps.format.UpperCase || ps.format.Prefix != "" {
+		formattedOutMap := map[string]string{}
+		// Generate new keys
+		for key, value := range out {
+			newKey := key
+			if ps.format.Prefix != "" {
+				newKey = prefixPath(ps.format.Prefix, newKey)
+			}
+			if ps.format.UpperCase {
+				newKey = strings.ToUpper(newKey)
+			}
+			if key != newKey {
+				formattedOutMap[newKey] = value
+			}
+		}
+		out = formattedOutMap
+	}
+
 	return out, nil
+}
+
+func prefixPath(prefix string, path string) string {
+	sep := "/"
+	splitPath := strings.Split(path, sep)
+	splitPath[len(splitPath)-1] = fmt.Sprintf("%s%s", prefix, splitPath[len(splitPath)-1])
+	return strings.Join(splitPath, sep)
 }
 
 func (ps *ParameterStore) b64(data string) string {
 	return base64.StdEncoding.EncodeToString([]byte(data))
 }
 
-func (ps ParameterStore) FormatOutput(data map[string]string, formatOptions FormatOptions) ([]byte, error) {
-	globalformatOptions = formatOptions
-	switch globalformatOptions.Format {
+func (ps ParameterStore) FormatOutput(data map[string]string) ([]byte, error) {
+	switch ps.format.Format {
 	case "json":
 		return json.Marshal(convertTree(data))
 	case "pretty-json":
