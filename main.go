@@ -15,7 +15,7 @@ import (
 
 var (
 	// VERSION is the application version
-	VERSION = "0.0.1"
+	version = "0.0.1"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	flag.Parse()
 
 	if *flagVersion {
-		fmt.Println(VERSION)
+		fmt.Println(version)
 		return
 	}
 
