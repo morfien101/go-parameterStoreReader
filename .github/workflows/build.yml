@@ -1,0 +1,62 @@
+name: build and test
+on: [push]
+jobs:
+  just_test:
+    if: startsWith(github.ref, 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "^1.19"
+      - name: go test
+        run: go test -v ./...
+  test_build_release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "^1.19"
+      - name: Get the version
+        id: get_tag
+        run: echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+      - name: go test
+        run: go test -v ./...
+      - name: build
+        shell: bash
+        run: |
+          # Make an artifacts directory
+          mkdir -p artifacts
+          NAME=aws-parameter-store-reader
+
+          # run the build for each supported OS
+          for os in "linux" "darwin" "windows"; do
+            echo "Building for $os..."
+            GOOS=$os CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${os} .
+            
+            # If its windows we need to rename it to have .exe at the end.
+            if [ $os == "windows" ]; then
+                mv ./artifacts/${NAME}_${os} ./artifacts/${NAME}_${os}.exe
+            fi
+          done
+
+          # Make an ARM bin for linux also
+          for arch in arm64 arm; do
+            echo "Building for linux on $arch..."
+            GOOS=linux GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${GOOS}_${arch} .
+          done
+
+          # Build for Mac with Apple Chips
+          for arch in arm64; do
+            echo "Building for Darwin on $arch..."
+            GOOS=Darwin GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${GOOS}_${arch} .
+          done
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*
+          body_path: .github/workflows/release_body.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
