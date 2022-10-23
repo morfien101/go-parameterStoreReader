@@ -28,30 +28,43 @@ jobs:
         shell: bash
         run: |
           # Make an artifacts directory
-          mkdir -p artifacts
+          ARTIFACTS_DIR="./artifacts"
           NAME=aws-parameter-store-reader
+          VERSION=${{ steps.get_tag.outputs.SOURCE_TAG }}
+          BUILD_CMD="go build -a -ldflags=\"-X main.version=$VERSION\""
+
+          mkdir -p $ARTIFACTS_DIR
 
           # run the build for each supported OS
           for os in "linux" "darwin" "windows"; do
-            echo "Building for $os..."
-            GOOS=$os GOARCH=amd64 CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_${os}_amd64 .
+            bin_name="${NAME}_${os}_amd64"
+            output="${ARTIFACTS_DIR}/${bin_name}"
+
+            echo "Building for $bin_name ..."
+            GOOS=$os GOARCH=amd64 CGO_ENABLED=0 $BUILD_CMD -o $output .
             
             # If its windows we need to rename it to have .exe at the end.
             if [ $os == "windows" ]; then
-                mv ./artifacts/${NAME}_${os} ./artifacts/${NAME}_${os}.exe
+                mv "$output" "${output}.exe"
             fi
           done
 
           # Make an ARM bin for linux also
           for arch in arm64 arm; do
-            echo "Building for linux on $arch..."
-            GOOS=linux GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_linux_${arch} .
+            bin_name="${NAME}_linux_${arch}"
+            output="${ARTIFACTS_DIR}/${bin_name}"
+
+            echo "Building for $bin_name ..."
+            GOOS=linux GOARCH=$arch CGO_ENABLED=0 $BUILD_CMD -o $output .
           done
 
           # Build for Mac with Apple Chips
           for arch in arm64; do
-            echo "Building for darwin on $arch..."
-            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go build -a -ldflags="-X main.version=${{ steps.get_tag.outputs.SOURCE_TAG }}" -o ./artifacts/${NAME}_darwin_${arch} .
+            bin_name="${NAME}_darwin_${arch}"
+            output="${ARTIFACTS_DIR}/${bin_name}"
+
+            echo "Building for $bin_name ..."
+            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go $BUILD_CMD -o $output .
           done
       - name: Release
         uses: softprops/action-gh-release@v1
