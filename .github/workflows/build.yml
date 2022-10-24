@@ -27,11 +27,14 @@ jobs:
       - name: build
         shell: bash
         run: |
+          #!/bin/bash
           # Make an artifacts directory
+          set -e
+
           ARTIFACTS_DIR="./artifacts"
           NAME=aws-parameter-store-reader
           VERSION=${{ steps.get_tag.outputs.SOURCE_TAG }}
-          BUILD_CMD=$(echo "go build -a -ldflags=\"-X main.version=$VERSION\"")
+          BUILD_CMD="go build -a -ldflags=\"-X main.version=$VERSION\""
 
           mkdir -p $ARTIFACTS_DIR
 
@@ -41,7 +44,7 @@ jobs:
             output="${ARTIFACTS_DIR}/${bin_name}"
 
             echo "Building for $bin_name ..."
-            GOOS=$os GOARCH=amd64 CGO_ENABLED=0 $BUILD_CMD -o $output .
+            /bin/bash -c "GOOS=$os GOARCH=amd64 CGO_ENABLED=0 $BUILD_CMD -o $output ."
             
             # If its windows we need to rename it to have .exe at the end.
             if [ $os == "windows" ]; then
@@ -55,7 +58,7 @@ jobs:
             output="${ARTIFACTS_DIR}/${bin_name}"
 
             echo "Building for $bin_name ..."
-            GOOS=linux GOARCH=$arch CGO_ENABLED=0 $BUILD_CMD -o $output .
+            /bin/bash -c "GOOS=linux GOARCH=$arch CGO_ENABLED=0 $BUILD_CMD -o $output ."
           done
 
           # Build for Mac with Apple Chips
@@ -64,7 +67,7 @@ jobs:
             output="${ARTIFACTS_DIR}/${bin_name}"
 
             echo "Building for $bin_name ..."
-            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go $BUILD_CMD -o $output .
+            /bin/bash -c "GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go $BUILD_CMD -o $output ."
           done
       - name: Release
         uses: softprops/action-gh-release@v1
