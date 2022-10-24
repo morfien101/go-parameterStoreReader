@@ -67,7 +67,7 @@ jobs:
             output="${ARTIFACTS_DIR}/${bin_name}"
 
             echo "Building for $bin_name ..."
-            /bin/bash -c "GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go $BUILD_CMD -o $output ."
+            /bin/bash -c "GOOS=darwin GOARCH=$arch CGO_ENABLED=0 $BUILD_CMD -o $output ."
           done
       - name: Release
         uses: softprops/action-gh-release@v1
