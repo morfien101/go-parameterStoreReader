@@ -1,4 +1,3 @@
-# Formatting options now work for all formats
+# upper case function fix
 
-Allow the use of the formatting options on all formats.
-This means that upper-case and prefix can now be used on all formats.
+Fixed a bug in the upper casing function.

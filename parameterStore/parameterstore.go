@@ -158,7 +158,7 @@ func (ps *ParameterStore) values(pip *ssm.GetParametersByPathInput) (map[string]
 			if ps.format.UpperCase {
 				newKey = strings.ToUpper(newKey)
 			}
-			if key != newKey {
+			if _, ok := formattedOutMap[newKey]; !ok {
 				formattedOutMap[newKey] = value
 			}
 		}
